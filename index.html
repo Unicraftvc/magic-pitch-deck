@@ -20,7 +20,9 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:#02051a;overflow:hidden;font-family:'Plus Jakarta Sans',Arial,sans-serif;-webkit-text-size-adjust:100%}
-#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+#rotate{position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top));transform:translateX(-50%);display:none;align-items:center;gap:10px;max-width:calc(100vw - 24px);padding:10px 16px;border:0;border-radius:999px;background:#4fe1ff;color:#05092b;font:600 14px/1.2 inherit;z-index:5;cursor:pointer}
+@media (orientation:portrait) and (max-width:700px){#rotate{display:flex}body.norot #rotate{display:none}}
 #frame{position:relative;width:1920px;height:1080px;flex:0 0 auto;transform-origin:center center;overflow:hidden;background:#050a2a}
 .slide{position:absolute;inset:0;width:1920px;height:1080px;overflow:hidden;display:none;opacity:0}
 .slide.on{display:block;opacity:1;animation:in .35s ease both}
@@ -1275,6 +1277,7 @@ body.hud #hud{opacity:1}
   
 </section>
 </div></main>
+<button id="rotate" type="button"><span aria-hidden="true">⟳</span> Turn your phone sideways for the full slide</button>
 <div id="hud"><button id="prev" aria-label="Previous slide">‹</button><span id="count"></span><button id="next" aria-label="Next slide">›</button></div>
 <noscript><p style="color:#fff;padding:24px">This deck needs JavaScript to display.</p></noscript>
 <script>
@@ -1282,7 +1285,10 @@ body.hud #hud{opacity:1}
   var frame=document.getElementById('frame'),slides=[].slice.call(document.querySelectorAll('.slide')),
       N=slides.length,cur=-1,hudT;
   function fit(){
-    var s=Math.min(innerWidth/1920,innerHeight/1080);
+    var vv=window.visualViewport,cs=getComputedStyle(document.getElementById('stage')),
+        w=(vv?vv.width:innerWidth)-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight),
+        h=(vv?vv.height:innerHeight)-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom),
+        s=Math.min(w/1920,h/1080);
     frame.style.transform='scale('+s+')';
   }
   function warm(i){
@@ -1310,6 +1316,12 @@ body.hud #hud{opacity:1}
     hudT=setTimeout(function(){document.body.classList.remove('hud')},2200);
   }
   addEventListener('resize',fit);
+  addEventListener('orientationchange',function(){setTimeout(fit,150);setTimeout(fit,500)});
+  if(window.visualViewport)visualViewport.addEventListener('resize',fit);
+  document.getElementById('rotate').onclick=function(){
+    document.body.classList.add('norot');
+    try{var d=document.documentElement;(d.requestFullscreen?d.requestFullscreen():Promise.reject()).then(function(){return screen.orientation.lock('landscape')}).catch(function(){})}catch(e){}
+  };
   addEventListener('hashchange',fromHash);
   addEventListener('mousemove',poke);
   addEventListener('keydown',function(e){
